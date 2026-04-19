@@ -9,15 +9,9 @@ import requests
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "default_secret_key")
 
-# =========================
-# AI CLIENTS (FIXED)
-# =========================
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 HF_TOKEN = os.getenv("HF_TOKEN")
 
-# =========================
-# DB (UNCHANGED)
-# =========================
 def get_db():
     return mysql.connector.connect(
         host="localhost",
@@ -26,15 +20,29 @@ def get_db():
         database="health_camp"
     )
 
-# =========================
-# TRIAGE PROMPT (UNCHANGED LOGIC)
-# =========================
 TRIAGE_SYSTEM = """
 You are a clinical assistant in a health camp.
 
 Rules:
 - Always give medical suggestions with real medicines.
 - Be short and practical.
+
+PRIORITY RULES (STRICT):
+
+
+- HIGH: chest pain, difficulty breathing, unconsciousness, severe bleeding, stroke symptoms
+
+- MEDIUM: fever, infection, vomiting, weakness, persistent headache, moderate pain,
+  eye redness, conjunctival injection, skin rash, itching, hives, allergic reaction, dermatitis, insect bite reaction
+
+- LOW: mild cough, common cold, sneezing, mild throat irritation, minor pain
+AGE RULE:
+- If age >= 60, increase severity by one level (LOW→MEDIUM, MEDIUM→HIGH)
+
+IMPORTANT:
+- Always follow priority rules strictly.
+- Do NOT guess severity.
+- Be conservative for mild symptoms.
 
 Output EXACTLY 4 lines:
 
@@ -53,26 +61,11 @@ Line 3: Second medicine or test
 Line 4: Short monitoring advice
 """
 
-# =========================
-# AI FUNCTION (FIXED INDENTATION ONLY)
-# =========================
 def analyze_reason(reason, age, image_file=None):
     priority = "MEDIUM"
     condition_suggestions = ""
     image_analysis = "No image provided."
 
-    # =========================
-    # IMAGE → HUGGING FACE (FIXED INDENTATION)
-    # =========================
-    # =========================
-# IMAGE → HUGGING FACE (FIXED ROBUST)
-# =========================
-   # =========================
-# IMAGE → SIMPLE DESCRIPTION ONLY
-# =========================
-    # =========================
-# IMAGE → GROQ VISION (FIXED REPLACEMENT)
-# =========================
     import base64  # (safe to include inside function if needed)
 
     if image_file and image_file.filename:
@@ -128,9 +121,6 @@ def analyze_reason(reason, age, image_file=None):
 
         except Exception as e:
             image_analysis = f"Image analysis error: {str(e)}"
-    # =========================
-    # TEXT → GROQ
-    # =========================
     try:
         chat = groq_client.chat.completions.create(
             model="llama-3.1-8b-instant",
@@ -153,9 +143,7 @@ def analyze_reason(reason, age, image_file=None):
     except Exception as e:
         condition_suggestions = f"Triage error: {e}"
 
-    # =========================
     # AGE BOOST
-    # =========================
     if int(age) >= 60:
         if priority == "LOW":
             priority = "MEDIUM"
@@ -165,9 +153,6 @@ def analyze_reason(reason, age, image_file=None):
     return priority, condition_suggestions, image_analysis
 
 
-# =========================
-# AUTH
-# =========================
 def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -176,10 +161,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
-
-# =========================
-# ROUTES (UNCHANGED)
-# =========================
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
