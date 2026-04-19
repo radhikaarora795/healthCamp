@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Health Camp System</title>
+    <style>
+        body { font-family: Arial; margin: 30px; background: #f4f6f8; }
+        h1 { color: #333; }
+        input, button, select, textarea { padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        .patient-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; background: white; padding: 18px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06); }
+        .patient-form label { display: block; margin-bottom: 6px; font-weight: 600; color: #333; }
+        .patient-form .full-width { grid-column: 1 / -1; }
+        .field-group { display: flex; flex-direction: column; }
+        .button-row { grid-column: 1 / -1; text-align: right; }
+        table { width: 100%; border-collapse: collapse; background: white; margin-top: 20px; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background: #007bff; color: white; }
+        .HIGH { color: red; font-weight: bold; }
+        .MEDIUM { color: orange; font-weight: bold; }
+        .LOW { color: green; font-weight: bold; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; position: sticky; top: 0; background: #f4f6f8; padding: 16px 0; z-index: 20; }
+        .filter { margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <h1>🏥 Health Camp Dashboard</h1>
+        <a href="/logout" style="background: #dc3545; color: white; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold;">Logout</a>
+    </div>
+
+    <h2>Add Patient</h2>
+    <form method="POST" action="/add" enctype="multipart/form-data" class="patient-form">
+        <div class="field-group">
+            <label>Name</label>
+            <input name="name" required>
+        </div>
+        <div class="field-group">
+            <label>Age</label>
+            <input name="age" type="number" required>
+        </div>
+        <div class="field-group full-width">
+            <label>Symptoms / Reason</label>
+            <input name="reason" required>
+        </div>
+        <div class="field-group full-width">
+            <label>Upload Image</label>
+            <input name="image" type="file" accept="image/*">
+        </div>
+        <div class="field-group">
+            <label>Contact</label>
+            <input name="contact">
+        </div>
+        <div class="field-group">
+            <label>Gender</label>
+            <select name="gender"><option>Male</option><option>Female</option><option>Other</option></select>
+        </div>
+        <div class="field-group full-width">
+            <label>Address</label>
+            <input name="address">
+        </div>
+        <div class="button-row">
+            <button type="submit">Add Patient</button>
+        </div>
+    </form>
+
+    <div class="filter">
+        <input id="search" placeholder="Search patients...">
+        <select id="priorityFilter">
+            <option value="">All Priorities</option>
+            <option value="HIGH">High</option>
+            <option value="MEDIUM">Medium</option>
+            <option value="LOW">Low</option>
+        </select>
+    </div>
+
+    <h2>Doctor Workloads</h2>
+    <table>
+        <tr><th>Doctor</th><th>Specialization</th><th>Current Load</th></tr>
+        {% for row in doctors_load %}
+        <tr><td>{{ row.name }}</td><td>{{ row.specialization }}</td><td>{{ row.patient_count }}</td></tr>
+        {% endfor %}
+    </table>
+
+    <div class="action-buttons" style="margin: 20px 0;">
+        <form action="/serve" method="GET"><button type="submit" style="background: #28a745; padding: 12px 20px; font-weight: bold;">Serve Next Patient</button></form>
+    </div>
+
+    <h2>Active Waiting List</h2>
+    <table id="patientsTable">
+        <tr>
+            <th>S.No</th>
+            <th>Name</th>
+            <th>Age</th>
+            <th>Symptoms</th>
+            <th>Doctor</th>
+            <th>Priority</th>
+            <th>Est. Wait (min)</th>
+            <th>Contact</th>
+            <th>Suggestions</th>
+            <th>Image Analysis</th>
+        </tr>
+        {% for p in patients %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ p.name }}</td>
+            <td>{{ p.age }}</td>
+            <td>{{ p.reason }}</td>
+            <td>{{ p.doctor_name }}</td>
+            <td class="{{ p.is_priority }}">{{ p.is_priority }}</td>
+            <td>{{ p.estimated_wait }}</td>
+            <td>{{ p.contact }}</td>
+            <td><div style="max-width: 300px; font-size: 0.9em;">{{ p.condition_suggestions }}</div></td>
+            <td><small>{{ p.image_analysis }}</small></td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        const searchInput = document.getElementById('search');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const table = document.getElementById('patientsTable');
+        const rows = table.getElementsByTagName('tr');
+
+        function filterTable() {
+            const searchValue = searchInput.value.toLowerCase();
+            const priorityValue = priorityFilter.value;
+            for (let i = 1; i < rows.length; i++) {
+                const cells = rows[i].getElementsByTagName('td');
+                if (cells.length > 0) {
+                    const name = cells[1].textContent.toLowerCase();
+                    const priority = cells[5].textContent;
+                    const matchesSearch = name.includes(searchValue);
+                    const matchesPriority = !priorityValue || priority === priorityValue;
+                    rows[i].style.display = matchesSearch && matchesPriority ? '' : 'none';
+                }
+            }
+        }
+        searchInput.addEventListener('input', filterTable);
+        priorityFilter.addEventListener('change', filterTable);
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+.env
+__pycache__/
+*.pyc
+tempCodeRunnerFile.py
+.DS_Store
+# Ignore images
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.webp
+images/
+static/images/
+
